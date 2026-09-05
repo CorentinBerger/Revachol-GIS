@@ -9,6 +9,10 @@ The repository contains a QGIS project, **`disco_elysium_revachol_GIS.qgz`**, in
 
 The project uses the **`RussoOne-Regular`** font included in the `fonts` folder, as well as the icons provided in the `icons` folder.
 
+### `maps`
+
+The maps folder contains PNG exports of the maps produced with the QGIS project, including thematic maps of Revachol and its different districts.
+
 ### `rasters`
 
 The `rasters` folder contains the following raster datasets:

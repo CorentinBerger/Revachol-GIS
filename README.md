@@ -1,7 +1,7 @@
 ## Author
 
 The GIS files were created by **Corentin Berger, PhD**. 
-The methodology used to reconstruct and map Revachol, the fictional city where the video game Disco Elysium takes place, is presented in a Medium article.
+The methodology used to reconstruct and map Revachol, the fictional city where the video game Disco Elysium takes place, is presented in a [Medium article](https://medium.com/@corentin_berger/mapping-revachol-reconstructing-the-world-of-disco-elysium-with-gis-9256daf879ff).
 
 ## Repository Structure
 

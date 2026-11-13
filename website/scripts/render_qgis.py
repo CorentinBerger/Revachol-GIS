@@ -41,8 +41,8 @@ if extent.isEmpty():
 pad = max(extent.width(), extent.height()) * .025
 extent.grow(pad)
 # Fixed aspect ratio for consistent pixel alignment of all rendered layers.
-width = 2800
-height = max(900, min(3500, round(width * extent.height() / max(extent.width(), 1e-9))))
+width = 4200
+height = max(900, min(4800, round(width * extent.height() / max(extent.width(), 1e-9))))
 settings = QgsMapSettings()
 settings.setDestinationCrs(target)
 settings.setExtent(extent)
@@ -51,26 +51,21 @@ settings.setBackgroundColor(QColor(0, 0, 0, 0))
 settings.setFlag(QgsMapSettings.Antialiasing, True)
 actual = settings.visibleExtent()
 bounds = [[actual.yMinimum(), actual.xMinimum()], [actual.yMaximum(), actual.xMaximum()]]
-manifest = []
-# QGIS layer tree is ordered top-to-bottom; Leaflet images added bottom-to-top.
-for index, node in enumerate(reversed(nodes)):
-    layer = node.layer()
-    settings.setLayers([layer])
-    job = QgsMapRendererSequentialJob(settings)
-    job.start()
-    job.waitForFinished()
-    image = job.renderedImage()
-    filename = f"qgis_{index:02d}.png"
-    if not image.save(str(OUT / filename), "PNG"):
-        raise RuntimeError("Failed to save " + filename)
-    manifest.append({
-        "id": layer.id(), "title": layer.name(), "file": filename,
-        "kind": "raster" if layer.type() == layer.RasterLayer else "vector",
-        "visible": node.isVisible(), "bounds": bounds,
-        "source": Path(layer.source().split("|")[0]).name,
-    })
-(OUT / "qgis_layers.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
-print(f"Rendered {len(manifest)} styled QGIS layers at {width}x{height}", flush=True)
-# QGIS native libraries can segfault during Python interpreter shutdown on headless runners.
-# All output files are already flushed; exit without running their global destructors.
+# Render a single QGIS composition so label placement and layer ordering are coherent.
+# Keep the QGIS tree's visibility, excluding the two unwanted reference rasters.
+visible = [n.layer() for n in nodes if n.isVisible()]
+if not visible:
+    raise RuntimeError("No visible QGIS layers to render")
+settings.setLayers(list(reversed(visible)))
+job = QgsMapRendererSequentialJob(settings)
+job.start()
+job.waitForFinished()
+image = job.renderedImage()
+if not image.save(str(OUT / "revachol_composite.png"), "PNG"):
+    raise RuntimeError("Failed to save composite")
+manifest = {"file": "revachol_composite.png", "bounds": bounds,
+            "layers": [layer.name() for layer in visible],
+            "excluded": sorted(EXCLUDED_RASTERS)}
+(OUT / "qgis_composite.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+print(f"Rendered QGIS composite with {len(visible)} visible layers at {width}x{height}", flush=True)
 os._exit(0)

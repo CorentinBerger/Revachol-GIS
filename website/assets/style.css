@@ -19,3 +19,9 @@
 .map-error{position:absolute;z-index:800;inset:auto 16px 45px 16px;background:#f3d8c9;color:#713d30;padding:12px;font:12px Arial,sans-serif}
 .leaflet-container{font-family:Georgia,serif}.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--paper);color:var(--ink);border-radius:0}.leaflet-popup-content{font-size:13px}.leaflet-control-layers{border:0!important;border-radius:0!important;background:var(--paper)!important;color:var(--ink)}
 @media(max-width:760px){.topbar{height:90px;padding:14px 18px}.brand h1{font-size:31px}.workspace{height:calc(100% - 90px);grid-template-columns:1fr;grid-template-rows:minmax(220px,38%) minmax(300px,1fr);padding:8px;gap:8px}.sidebar{overflow:auto}.intro{padding:15px 17px}.intro h2{font-size:19px}.intro p{font-size:12px}.layer-section,.feature-section{padding:12px 17px}.layer-list{grid-template-columns:1fr 1fr}.feature-section{display:none}.sidebar-footer{padding:9px 17px}}
+
+/* OpenLayers controls */
+.ol-zoom{position:absolute;top:64px;left:14px;display:flex;flex-direction:column;gap:5px}
+.ol-zoom button{background:#e8e1ce;color:#343a37;border:1px solid #77786d;width:32px;height:32px;font-size:22px;cursor:pointer}
+.ol-viewport{font-family:Georgia,serif}
+.city-zoom{padding:9px 12px;border:1px solid #a34d37;background:#e8e1ce;color:#a34d37;font:700 11px Arial,sans-serif;cursor:pointer}

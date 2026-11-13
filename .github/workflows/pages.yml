@@ -1,7 +1,7 @@
 name: Publish Revachol website
 on:
   push:
-    branches: [main]
+    branches: [website]
     paths:
       - 'website/**'
       - 'vectors/**'

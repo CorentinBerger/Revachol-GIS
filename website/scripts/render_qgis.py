@@ -6,7 +6,7 @@ from pathlib import Path
 from qgis.core import (
     QgsApplication, QgsProject, QgsCoordinateReferenceSystem,
     QgsCoordinateTransform, QgsRectangle, QgsMapSettings,
-    QgsMapRendererSequentialJob, QgsLayerTreeLayer
+    QgsMapRendererSequentialJob, QgsLayerTreeLayer, QgsNullSymbolRenderer
 )
 from qgis.PyQt.QtCore import QSize, Qt
 from qgis.PyQt.QtGui import QColor
@@ -51,27 +51,37 @@ settings.setBackgroundColor(QColor(0, 0, 0, 0))
 settings.setFlag(QgsMapSettings.Antialiasing, True)
 actual = settings.visibleExtent()
 bounds = [[actual.yMinimum(), actual.xMinimum()], [actual.yMaximum(), actual.xMaximum()]]
-# Render a single QGIS composition so label placement and layer ordering are coherent.
-# Keep the QGIS tree's visibility, excluding the two unwanted reference rasters.
-visible = [n.layer() for n in nodes if n.isVisible()]
-# Include the two requested analytical rasters even when hidden in the saved QGIS tree.
-# They remain beneath vector layers and can be toggled separately in Leaflet.
-rasters = [n.layer() for n in nodes if Path(n.layer().source().split("|")[0]).name.lower() in {"revachol_dem.tif", "revachol_hillshade.tif"}]
-print("QGIS valid layers:", [(n.layer().name(), Path(n.layer().source().split("|")[0]).name, n.isVisible()) for n in nodes], flush=True)
-print("Requested rasters:", [l.name() for l in rasters], flush=True)
+# Raster backgrounds are rendered separately from vector labels and symbols.
+# This prevents the opaque DEM from obscuring the hillshade or waterbody text.
+visible = [n.layer() for n in nodes if n.isVisible() and n.layer().name() != "OSM Standard"]
+rasters = {Path(l.source().split("|")[0]).name.lower(): l for l in visible if l.type() == l.RasterLayer}
+required = ("revachol_dem.tif", "revachol_hillshade.tif")
+if any(name not in rasters for name in required):
+    raise RuntimeError("Required DEM and hillshade missing from QGIS project")
 
-if not visible:
-    raise RuntimeError("No visible QGIS layers to render")
-settings.setLayers(list(reversed(visible)))
-job = QgsMapRendererSequentialJob(settings)
-job.start()
-job.waitForFinished()
-image = job.renderedImage()
-if not image.save(str(OUT / "revachol_composite.png"), "PNG"):
-    raise RuntimeError("Failed to save composite")
-manifest = {"file": "revachol_composite.png", "bounds": bounds,
-            "layers": [layer.name() for layer in visible],
-            "excluded": sorted(EXCLUDED_RASTERS)}
+def render(filename, layers):
+    settings.setLayers(layers)
+    job = QgsMapRendererSequentialJob(settings)
+    job.start()
+    job.waitForFinished()
+    if not job.renderedImage().save(str(OUT / filename), "PNG"):
+        raise RuntimeError("Failed to save " + filename)
+
+# Raster appearance is taken from the original QGIS raster renderers.
+render("revachol_dem.png", [rasters[required[0]]])
+render("revachol_hillshade.png", [rasters[required[1]]])
+vector_layers = [l for l in visible if l.type() != l.RasterLayer]
+# Waterbody names is a text-only layer. Suppress its symbols while retaining
+# its QGIS labeling engine, label expressions, fonts, and halos.
+for layer in vector_layers:
+    if layer.name().casefold() == "waterbody names":
+        layer.setRenderer(QgsNullSymbolRenderer())
+# QGIS top-to-bottom tree order becomes bottom-to-top renderer order.
+render("revachol_vectors.png", list(reversed(vector_layers)))
+manifest = {"bounds": bounds, "dem": "revachol_dem.png",
+            "hillshade": "revachol_hillshade.png", "vectors": "revachol_vectors.png",
+            "layers": [l.name() for l in visible],
+            "excluded": sorted(EXCLUDED_RASTERS) + ["OSM Standard"]}
 (OUT / "qgis_composite.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
-print(f"Rendered QGIS composite with {len(visible)} visible layers at {width}x{height}", flush=True)
+print("Rendered DEM + hillshade + vectors, waterbody names text only", flush=True)
 os._exit(0)

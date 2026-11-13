@@ -19,7 +19,7 @@ app.initQgis()
 project = QgsProject.instance()
 if not project.read(str(ROOT / "disco_elysium_revachol_GIS.qgz")):
     raise RuntimeError("Unable to open QGIS project")
-target = QgsCoordinateReferenceSystem("EPSG:4326")
+target = QgsCoordinateReferenceSystem("EPSG:31467")
 tree = project.layerTreeRoot()
 EXCLUDED_RASTERS = {"revachol_mapmax.tif", "revachol_west-jamrock_zaum.tif"}
 nodes = [n for n in tree.findLayers() if n.layer() and n.layer().isValid() and Path(n.layer().source().split("|")[0]).name.lower() not in EXCLUDED_RASTERS]
@@ -53,7 +53,7 @@ settings.setOutputSize(QSize(width, height))
 settings.setBackgroundColor(QColor(0, 0, 0, 0))
 settings.setFlag(QgsMapSettings.Antialiasing, True)
 actual = settings.visibleExtent()
-bounds = [[actual.yMinimum(), actual.xMinimum()], [actual.yMaximum(), actual.xMaximum()]]
+bounds = [[actual.xMinimum(), actual.yMinimum()], [actual.xMaximum(), actual.yMaximum()]]
 # Raster backgrounds are rendered separately from vector labels and symbols.
 # This prevents the opaque DEM from obscuring the hillshade or waterbody text.
 visible = [n.layer() for n in nodes if n.isVisible() and n.layer().name() != "OSM Standard"]
@@ -81,7 +81,7 @@ for layer in vector_layers:
         layer.setRenderer(QgsNullSymbolRenderer())
 # QGIS top-to-bottom tree order becomes bottom-to-top renderer order.
 render("revachol_vectors.png", list(reversed(vector_layers)))
-manifest = {"bounds": bounds, "dem": "revachol_dem.png",
+manifest = {"bounds": bounds, "crs": "EPSG:31467", "dem": "revachol_dem.png",
             "hillshade": "revachol_hillshade.png", "vectors": "revachol_vectors.png",
             "layers": [l.name() for l in visible],
             "excluded": sorted(EXCLUDED_RASTERS) + ["OSM Standard"]}

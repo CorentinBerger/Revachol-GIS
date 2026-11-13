@@ -21,7 +21,8 @@ if not project.read(str(ROOT / "disco_elysium_revachol_GIS.qgz")):
     raise RuntimeError("Unable to open QGIS project")
 target = QgsCoordinateReferenceSystem("EPSG:4326")
 tree = project.layerTreeRoot()
-nodes = [n for n in tree.findLayers() if n.layer() and n.layer().isValid()]
+EXCLUDED_RASTERS = {"revachol_mapmax.tif", "revachol_west-jamrock_zaum.tif"}
+nodes = [n for n in tree.findLayers() if n.layer() and n.layer().isValid() and Path(n.layer().source().split("|")[0]).name.lower() not in EXCLUDED_RASTERS]
 if not nodes:
     raise RuntimeError("No valid layers in QGIS project. Check source paths.")
 # Use the actual QGIS map canvas extent, falling back to all layers.

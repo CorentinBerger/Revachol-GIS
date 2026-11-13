@@ -15,7 +15,7 @@ async function init(){try{
  const [[xmin,ymin],[xmax,ymax]]=config.bounds;const extent=[xmin,ymin,xmax,ymax];
  if(!extent.every(Number.isFinite)||xmax<=xmin||ymax<=ymin)throw Error('Emprise EPSG:31467 invalide');
  const dem=raster(config.dem,extent,1),hillshade=raster(config.hillshade,extent,.45),vectors=raster(config.vectors,extent,1);
- const map=new ol.Map({target:'map',layers:[dem,hillshade,vectors],view:new ol.View({projection,center:ol.extent.getCenter(extent),resolution:Math.max((xmax-xmin)/850,(ymax-ymin)/600),enableRotation:false}),controls:ol.control.defaults.defaults({attribution:false})});
+ const map=new ol.Map({target:'map',layers:[dem,hillshade,vectors],view:new ol.View({projection,center:ol.extent.getCenter(extent),resolution:Math.max((xmax-xmin)/850,(ymax-ymin)/600),enableRotation:false}),controls:ol.control.defaults({attribution:false})});
  function focus(){map.updateSize();map.getView().fit(extent,{size:map.getSize(),padding:[28,28,28,28],duration:250});}
  map.once('postrender',focus);window.addEventListener('resize',()=>map.updateSize());
  layerList.innerHTML='<div class="section-kicker">EPSG:31467 · COUCHES QGIS</div>';
@@ -25,7 +25,7 @@ async function init(){try{
  const rr=await fetch('./data/layers.json');if(!rr.ok)throw Error('GeoJSON absents');const layers=await rr.json();let total=0;
  for(const item of layers){const res=await fetch('./data/'+item.file);if(!res.ok)continue;const geo=await res.json();total+=geo.features?.length||0;
  const source=new ol.source.Vector({features:new ol.format.GeoJSON().readFeatures(geo,{dataProjection:'EPSG:4326',featureProjection:projection})});
- const hit=new ol.layer.Vector({source,style:()=>null,visible:true});hit.set('title',item.title);map.addLayer(hit);
+ const hit=new ol.layer.Vector({source,style:new ol.style.Style({stroke:new ol.style.Stroke({color:'rgba(0,0,0,0.001)',width:8}),fill:new ol.style.Fill({color:'rgba(0,0,0,0.001)'}),image:new ol.style.Circle({radius:9,fill:new ol.style.Fill({color:'rgba(0,0,0,0.001)'})})}),visible:true});hit.set('title',item.title);map.addLayer(hit);
  }
  map.on('singleclick',e=>{let found=false;map.forEachFeatureAtPixel(e.pixel,(feature,layer)=>{if(found)return true;found=true;showFeature(feature.getProperties(),layer?.get('title')||'Objet');return true;},{hitTolerance:6});});
  status.textContent=total.toLocaleString('fr-FR')+' OBJETS · EPSG:31467';

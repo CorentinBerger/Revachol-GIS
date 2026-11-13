@@ -15,7 +15,7 @@ async function init(){try{
  const [[xmin,ymin],[xmax,ymax]]=config.bounds;const extent=[xmin,ymin,xmax,ymax];
  if(!extent.every(Number.isFinite)||xmax<=xmin||ymax<=ymin)throw Error('Emprise EPSG:31467 invalide');
  const dem=raster(config.dem,extent,1),hillshade=raster(config.hillshade,extent,.45);
- const map=new ol.Map({target:'map',layers:[dem,hillshade],view:new ol.View({projection,center:ol.extent.getCenter(extent),resolution:Math.max((xmax-xmin)/850,(ymax-ymin)/600),enableRotation:false}),controls:ol.control.defaults({attribution:false})});
+ const map=new ol.Map({target:'map',layers:[dem,hillshade],view:new ol.View({projection,center:ol.extent.getCenter(extent),resolution:Math.max((xmax-xmin)/850,(ymax-ymin)/600),enableRotation:false}),controls:new ol.Collection([new ol.control.Zoom()])});
  function focus(){map.updateSize();map.getView().fit(extent,{size:map.getSize(),padding:[28,28,28,28],duration:250});}
  map.once('postrender',focus);window.addEventListener('resize',()=>map.updateSize());
  layerList.innerHTML='<div class="section-kicker">EPSG:31467 · COUCHES QGIS</div>';

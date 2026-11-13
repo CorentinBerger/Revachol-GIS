@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#171b1b">
+  <meta name="description" content="Carte interactive de Revachol — projet cartographique inspiré de Disco Elysium.">
+  <title>Revachol — Atlas cartographique</title>
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="./assets/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="eyebrow">ATLAS CARTOGRAPHIQUE · MERCREDI, 08:00</div>
+      <h1>REVACHOL</h1>
+      <p class="subtitle">La ville qui refuse de mourir.</p>
+    </div>
+    <div class="header-mark">R.</div>
+  </header>
+  <main class="workspace">
+    <aside class="sidebar">
+      <section class="intro">
+        <div class="section-kicker">DOSSIER GÉOGRAPHIQUE Nº 01</div>
+        <h2>Une ville, ses strates.</h2>
+        <p>Explorez les quartiers, les lieux et les infrastructures de Revachol. Activez les couches et sélectionnez un élément pour consulter ses attributs.</p>
+      </section>
+      <section class="layer-section">
+        <div class="section-heading"><span>COUCHES CARTOGRAPHIQUES</span><span class="live-dot"></span></div>
+        <div id="layer-list" class="layer-list"><p class="muted">Chargement des couches…</p></div>
+      </section>
+      <section class="feature-section">
+        <div class="section-heading">FICHE DE L'ENTITÉ</div>
+        <div id="feature-info" class="feature-info">
+          <span class="empty-symbol">✳</span>
+          <p class="muted">Sélectionnez un élément sur la carte pour consulter ses informations.</p>
+        </div>
+      </section>
+      <footer class="sidebar-footer">CARTOGRAPHIE NON OFFICIELLE · REVACHOL GIS</footer>
+    </aside>
+    <section class="map-panel">
+      <div class="map-stamp"><span>RÉPUBLIQUE DE REVACHOL</span><b>01 / 01</b></div>
+      <div id="map" aria-label="Carte interactive de Revachol"></div>
+      <div class="map-coordinates" id="map-status">INITIALISATION DE LA CARTE…</div>
+      <div id="map-error" class="map-error" hidden></div>
+    </section>
+  </main>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="./assets/app.js"></script>
+</body>
+</html>

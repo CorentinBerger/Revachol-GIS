@@ -69,4 +69,7 @@ for index, node in enumerate(reversed(nodes)):
         "source": Path(layer.source().split("|")[0]).name,
     })
 (OUT / "qgis_layers.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
-print(f"Rendered {len(manifest)} styled QGIS layers at {width}x{height}")
+print(f"Rendered {len(manifest)} styled QGIS layers at {width}x{height}", flush=True)
+# QGIS native libraries can segfault during Python interpreter shutdown on headless runners.
+# All output files are already flushed; exit without running their global destructors.
+os._exit(0)

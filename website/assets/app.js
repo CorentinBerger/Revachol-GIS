@@ -22,12 +22,15 @@ async function init(){try{
  toggle('MNT · Topography',dem);toggle('Ombrage · Hillshade',hillshade);toggle('Vecteurs et étiquettes QGIS',vectors);
  const zoom=document.createElement('button');zoom.className='city-zoom';zoom.textContent='⌖ ZOOM SUR REVACHOL';zoom.addEventListener('click',focus);layerList.appendChild(zoom);
  const note=document.createElement('p');note.className='muted';note.textContent='Projection DHDN / Gauss-Krüger zone 3 · sans fond OSM';layerList.appendChild(note);
+ let vectorExtent=ol.extent.createEmpty();
  const rr=await fetch('./data/layers.json');if(!rr.ok)throw Error('GeoJSON absents');const layers=await rr.json();let total=0;
  for(const item of layers){const res=await fetch('./data/'+item.file);if(!res.ok)continue;const geo=await res.json();total+=geo.features?.length||0;
  const source=new ol.source.Vector({features:new ol.format.GeoJSON().readFeatures(geo,{dataProjection:'EPSG:4326',featureProjection:projection})});
- const hit=new ol.layer.Vector({source,style:new ol.style.Style({stroke:new ol.style.Stroke({color:'rgba(0,0,0,0.001)',width:8}),fill:new ol.style.Fill({color:'rgba(0,0,0,0.001)'}),image:new ol.style.Circle({radius:9,fill:new ol.style.Fill({color:'rgba(0,0,0,0.001)'})})}),visible:true});hit.set('title',item.title);map.addLayer(hit);
+ if(source.getFeatures().length)ol.extent.extend(vectorExtent,source.getExtent());
+ const hit=new ol.layer.Vector({source,style:new ol.style.Style({stroke:new ol.style.Stroke({color:'#725c4b',width:1.5}),fill:new ol.style.Fill({color:'rgba(157,121,87,0.10)'}),image:new ol.style.Circle({radius:4,fill:new ol.style.Fill({color:'#9a563e'})})}),visible:true});hit.set('title',item.title);map.addLayer(hit);
  }
  map.on('singleclick',e=>{let found=false;map.forEachFeatureAtPixel(e.pixel,(feature,layer)=>{if(found)return true;found=true;showFeature(feature.getProperties(),layer?.get('title')||'Objet');return true;},{hitTolerance:6});});
- status.textContent=total.toLocaleString('fr-FR')+' OBJETS · EPSG:31467';
+ if(!ol.extent.isEmpty(vectorExtent)){const width=ol.extent.getWidth(vectorExtent),height=ol.extent.getHeight(vectorExtent);const rasterWidth=xmax-xmin,rasterHeight=ymax-ymin;console.info('EPSG:31467 raster extent',extent,'vector extent',vectorExtent);if(width>0&&height>0&&width<rasterWidth*0.9&&height<rasterHeight*0.9){map.getView().fit(vectorExtent,{size:map.getSize(),padding:[35,35,35,35]});}}
+ status.textContent=total.toLocaleString('fr-FR')+' OBJETS · EPSG:31467 · VECTEURS VISIBLES';
 }catch(e){errorBox.hidden=false;errorBox.textContent=e.message;status.textContent='CARTE INDISPONIBLE';console.error(e);}}
 init();

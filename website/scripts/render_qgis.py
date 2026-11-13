@@ -54,6 +54,12 @@ bounds = [[actual.yMinimum(), actual.xMinimum()], [actual.yMaximum(), actual.xMa
 # Render a single QGIS composition so label placement and layer ordering are coherent.
 # Keep the QGIS tree's visibility, excluding the two unwanted reference rasters.
 visible = [n.layer() for n in nodes if n.isVisible()]
+# Include the two requested analytical rasters even when hidden in the saved QGIS tree.
+# They remain beneath vector layers and can be toggled separately in Leaflet.
+rasters = [n.layer() for n in nodes if Path(n.layer().source().split("|")[0]).name.lower() in {"revachol_dem.tif", "revachol_hillshade.tif"}]
+print("QGIS valid layers:", [(n.layer().name(), Path(n.layer().source().split("|")[0]).name, n.isVisible()) for n in nodes], flush=True)
+print("Requested rasters:", [l.name() for l in rasters], flush=True)
+
 if not visible:
     raise RuntimeError("No visible QGIS layers to render")
 settings.setLayers(list(reversed(visible)))

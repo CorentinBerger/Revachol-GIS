@@ -14,12 +14,13 @@ async function init(){try{
  const config=await response.json();if(config.crs!=='EPSG:31467')throw Error('EPSG:31467 attendu');
  const [[xmin,ymin],[xmax,ymax]]=config.bounds;const extent=[xmin,ymin,xmax,ymax];
  if(!extent.every(Number.isFinite)||xmax<=xmin||ymax<=ymin)throw Error('Emprise EPSG:31467 invalide');
- const dem=raster(config.dem,extent,1),hillshade=raster(config.hillshade,extent,.45),vectors=raster(config.vectors,extent,1);
- const map=new ol.Map({target:'map',layers:[dem,hillshade,vectors],view:new ol.View({projection,center:ol.extent.getCenter(extent),resolution:Math.max((xmax-xmin)/850,(ymax-ymin)/600),enableRotation:false}),controls:ol.control.defaults({attribution:false})});
+ const dem=raster(config.dem,extent,1),hillshade=raster(config.hillshade,extent,.45);
+ const map=new ol.Map({target:'map',layers:[dem,hillshade],view:new ol.View({projection,center:ol.extent.getCenter(extent),resolution:Math.max((xmax-xmin)/850,(ymax-ymin)/600),enableRotation:false}),controls:ol.control.defaults({attribution:false})});
  function focus(){map.updateSize();map.getView().fit(extent,{size:map.getSize(),padding:[28,28,28,28],duration:250});}
  map.once('postrender',focus);window.addEventListener('resize',()=>map.updateSize());
  layerList.innerHTML='<div class="section-kicker">EPSG:31467 · COUCHES QGIS</div>';
- toggle('MNT · Topography',dem);toggle('Ombrage · Hillshade',hillshade);toggle('Vecteurs et étiquettes QGIS',vectors);
+ const backgroundLabel=document.createElement('label');backgroundLabel.className='layer-toggle';backgroundLabel.innerHTML='<input type="checkbox" checked><span>MNT + ombrage</span>';backgroundLabel.querySelector('input').addEventListener('change',e=>{dem.setVisible(e.target.checked);hillshade.setVisible(e.target.checked);});layerList.appendChild(backgroundLabel);
+ const vectorHeading=document.createElement('div');vectorHeading.className='section-kicker';vectorHeading.textContent='COUCHES VECTORIELLES';layerList.appendChild(vectorHeading);
  const zoom=document.createElement('button');zoom.className='city-zoom';zoom.textContent='⌖ ZOOM SUR REVACHOL';zoom.addEventListener('click',focus);layerList.appendChild(zoom);
  const note=document.createElement('p');note.className='muted';note.textContent='Projection DHDN / Gauss-Krüger zone 3 · sans fond OSM';layerList.appendChild(note);
  let vectorExtent=ol.extent.createEmpty();
@@ -27,7 +28,11 @@ async function init(){try{
  for(const item of layers){const res=await fetch('./data/'+item.file);if(!res.ok)continue;const geo=await res.json();total+=geo.features?.length||0;
  const source=new ol.source.Vector({features:new ol.format.GeoJSON().readFeatures(geo,{dataProjection:'EPSG:4326',featureProjection:projection})});
  if(source.getFeatures().length)ol.extent.extend(vectorExtent,source.getExtent());
- const hit=new ol.layer.Vector({source,style:new ol.style.Style({stroke:new ol.style.Stroke({color:'#725c4b',width:1.5}),fill:new ol.style.Fill({color:'rgba(157,121,87,0.10)'}),image:new ol.style.Circle({radius:4,fill:new ol.style.Fill({color:'#9a563e'})})}),visible:true});hit.set('title',item.title);map.addLayer(hit);
+ const waterNames=/waterbody.names/i.test(item.title);
+ const nameStyle=feature=>{const props=feature.getProperties();const name=props.name||props.Name||props.NAME||props.label||props.Label||props.nom||props.Nom||props.NOM||'';return name?new ol.style.Style({text:new ol.style.Text({text:String(name),font:'italic 13px Georgia,serif',fill:new ol.style.Fill({color:'#314d5c'}),stroke:new ol.style.Stroke({color:'#f1ebd9',width:3}),overflow:true})}):null;};
+ const regularStyle=new ol.style.Style({stroke:new ol.style.Stroke({color:'#725c4b',width:1.5}),fill:new ol.style.Fill({color:'rgba(157,121,87,0.10)'}),image:new ol.style.Circle({radius:4,fill:new ol.style.Fill({color:'#9a563e'})})});
+ const hit=new ol.layer.Vector({source,style:waterNames?nameStyle:regularStyle,visible:true});hit.set('title',item.title);map.addLayer(hit);
+ toggle(item.title,hit);
  }
  map.on('singleclick',e=>{let found=false;map.forEachFeatureAtPixel(e.pixel,(feature,layer)=>{if(found)return true;found=true;showFeature(feature.getProperties(),layer?.get('title')||'Objet');return true;},{hitTolerance:6});});
  if(!ol.extent.isEmpty(vectorExtent)){const width=ol.extent.getWidth(vectorExtent),height=ol.extent.getHeight(vectorExtent);const rasterWidth=xmax-xmin,rasterHeight=ymax-ymin;console.info('EPSG:31467 raster extent',extent,'vector extent',vectorExtent);if(width>0&&height>0&&width<rasterWidth*0.9&&height<rasterHeight*0.9){map.getView().fit(vectorExtent,{size:map.getSize(),padding:[35,35,35,35]});}}

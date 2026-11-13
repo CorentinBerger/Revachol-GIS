@@ -5,6 +5,8 @@ on:
     paths:
       - 'website/**'
       - 'vectors/**'
+      - 'rasters/**'
+      - 'disco_elysium_revachol_GIS.qgz'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 permissions:
@@ -23,9 +25,13 @@ jobs:
       - name: Install GDAL
         run: |
           sudo apt-get update
-          sudo apt-get install -y gdal-bin
+          sudo apt-get install -y gdal-bin python3-qgis python3-pyqt5
       - name: Convert GeoPackages to GeoJSON
         run: python3 website/scripts/build_geojson.py
+      - name: Render QGIS symbology and rasters
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: /usr/bin/python3 website/scripts/render_qgis.py
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:

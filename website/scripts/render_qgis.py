@@ -25,10 +25,12 @@ EXCLUDED_RASTERS = {"revachol_mapmax.tif", "revachol_west-jamrock_zaum.tif"}
 nodes = [n for n in tree.findLayers() if n.layer() and n.layer().isValid() and Path(n.layer().source().split("|")[0]).name.lower() not in EXCLUDED_RASTERS]
 if not nodes:
     raise RuntimeError("No valid layers in QGIS project. Check source paths.")
-# Use the actual QGIS map canvas extent, falling back to all layers.
+# Compute the city extent from visible vector geometries, not large raster footprints.
 extent = QgsRectangle()
 for node in nodes:
     layer = node.layer()
+    if not node.isVisible() or layer.type() == layer.RasterLayer or layer.name() == "OSM Standard":
+        continue
     try:
         tr = QgsCoordinateTransform(layer.crs(), target, project)
         r = tr.transformBoundingBox(layer.extent())
@@ -38,11 +40,12 @@ for node in nodes:
         print("Skipping extent", layer.name(), e)
 if extent.isEmpty():
     raise RuntimeError("No usable map extent")
-pad = max(extent.width(), extent.height()) * .025
+print("Vector city extent:", extent.toString(), flush=True)
+pad = max(extent.width(), extent.height()) * .035
 extent.grow(pad)
 # Fixed aspect ratio for consistent pixel alignment of all rendered layers.
-width = 4200
-height = max(900, min(4800, round(width * extent.height() / max(extent.width(), 1e-9))))
+width = 6000
+height = max(900, min(6000, round(width * extent.height() / max(extent.width(), 1e-9))))
 settings = QgsMapSettings()
 settings.setDestinationCrs(target)
 settings.setExtent(extent)
@@ -83,5 +86,5 @@ manifest = {"bounds": bounds, "dem": "revachol_dem.png",
             "layers": [l.name() for l in visible],
             "excluded": sorted(EXCLUDED_RASTERS) + ["OSM Standard"]}
 (OUT / "qgis_composite.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
-print("Rendered DEM + hillshade + vectors, waterbody names text only", flush=True)
+print("Rendered focused city extent, DEM + hillshade + vectors, waterbody names text only", flush=True)
 os._exit(0)
